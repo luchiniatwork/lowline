@@ -1,0 +1,10 @@
+{:deps
+ {clansi {:mvn/version "1.0.0"}
+  clojure-lanterna {:mvn/version "0.9.7"}
+  expound {:mvn/version "0.5.0"}
+  org.jline/jline {:mvn/version "3.5.1"}}
+
+ :aliases
+ {:repl {:extra-deps {org.clojure/tools.nrepl {:mvn/version "0.2.13"}
+                      cider/cider-nrepl {:mvn/version "0.17.0-SNAPSHOT"}}
+         :main-opts ["-m repl"]}}}
