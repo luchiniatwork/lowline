@@ -67,34 +67,39 @@
   [
    ;; Default value (or any other transformation)
    {:id :company
-    :prompt "Company?"
-    :parser (fn [a] {:value (or a "None")})}
+    :prompt "Company"
+    :parser (fn [a] {:value (if (= 0 (count a))
+                              "None" a)})}
 
    ;; Validations
    {:id :age
-    :prompt "Age?"
+    :prompt "Age"
     :parser (fn [a]
-              {:valid? (and (integer? a)
-                            (> a 0)
-                            (< a 105))
-               :message "Must be between 0 and 105"})}
+              (try (let [i (Integer/parseInt a)]
+                     {:valid? (and (> i 0)
+                                   (< i 105))
+                      :message "Must be between 0 and 105"
+                      :value i})
+                   (catch Exception ex
+                     {:valid? false
+                      :message "Must be a number"})))}
    {:id :name
-    :prompt "Name?"
+    :prompt "Name"
     :parser (fn [a]
-              {:valid? (re-matches #"^([ \u00c0-\u01ffa-zA-Z'\-])+$" a)})}
+              {:valid? (not (nil? (re-matches #"^([ \u00c0-\u01ffa-zA-Z'\-])+$" a)))})}
 
    ;; Type converstaions
    {:id :interests
-    :prompt "Interests? (comma sep list)"
-    :parser (fn [a] {:value (str/split #"," a)})}
+    :prompt "Interests (comma sep list)"
+    :parser (fn [a] {:value (str/split a #",")})}
 
    ;; Passwords
    {:id :pass1
-    :prompt "Password (no echo):"
+    :prompt "Password (no echo)"
     :echo false}
    
    {:id :pass2
-    :prompt "Password (echo \"x\"):"
+    :prompt "Password (echo \"x\")"
     :echo "x"}
    
    ])
