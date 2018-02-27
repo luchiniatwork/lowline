@@ -93,6 +93,19 @@
     :prompt "Interests (comma sep list)"
     :parser (fn [a] {:value (str/split a #",")})}
 
+   ;; Menu options
+   {:id :preferred-language
+    :prompt "Choose preferred language:"
+    :options [{:id :ruby
+               :prompt "The language that makes DHH happy"}
+              {:id :clojure
+               :prompt "The language that makes Rich Hickey happy"}
+              {:id :na
+               :prompt "None"
+               :parser (fn [a] {:value "N/A"})}]
+    :option-color [:red :bg-white] ;; some default
+    :message "Must be ruby, clojure or na"}
+   
    ;; Passwords
    {:id :pass1
     :prompt "Password (no echo)"

@@ -21,12 +21,19 @@
 (s/def ::parser (s/and ifn? #(= 1 (arg-count %))))
 (expound/defmsg ::parser "should be a function with exactly one argument")
 
-(s/def ::echo (s/or :bool boolean?
-                    :str #(and (string? %) (= 1 (count %)))))
-(expound/defmsg ::echo "should be a either a boolean or a string of exactly one character")
 
-(s/def ::question (s/keys :req-un [::id ::prompt]
-                          :opt-un [::parser ::echo]))
+
+(s/def ::base-question (s/keys :req-un [::id ::prompt]
+                               :opt-un [::parser]))
+
+(s/def ::options (s/coll-of ::base-question
+                            :kind vector?
+                            :min-count 1))
+
+(s/def ::menu-question (s/keys :req-un [::id ::prompt ::options]))
+
+(s/def ::question (s/or :base-question ::base-question
+                        :menu-question ::menu-question))
 
 (s/def ::questions (s/coll-of ::question
                               :kind vector?
@@ -50,13 +57,19 @@
 (s/def ::parsed (s/or :validator ::parsed-validator
                       :converter ::parsed-converter))
 
+
 ;; --------------------------------------------------
 
-(defn print-error [msg]
+(defn ^:private print-error [msg] 
   (println (c/style (str "! " msg) :red)))
 
-(defn print-question [prompt]
+(defn ^:private print-question [prompt]
   (print (c/style (str "? " prompt " ") :yellow)))
+
+(defn ^:private print-options [options]
+  (if options
+    (doseq [{:keys [id prompt]} options]
+      (println id prompt))))
 
 (defn ^:private error-out [questions]
   (expound/expound ::questions questions)
@@ -64,6 +77,8 @@
 
 (defn ^:private print-validation-message [message]
   (print-error (or message "Invalid input. Try again.")))
+
+;; --------------------------------------------------
 
 (defn ^:private process-parser [parser res]
   (if parser
@@ -75,16 +90,23 @@
           (or value res))
         (expound/expound ::parsed parsed)))))
 
-(defn ^:private ask [{:keys [id prompt parser echo] :as question}]
+(defn ^:private ask [{:keys [id prompt options parser] :as question}]
   (loop []
     (print-question prompt)
+    (print-options options)
     (flush)
     (let [res (read-line)]
-      (if parser
-        (if-let [out (process-parser parser res)]
-          out
-          (recur))
-        res))))
+      (if options
+        (if (some #(= res (name %)) (map #(:id %) options))
+          (keyword res)
+          (do
+            (print-validation-message (:message question))
+            (recur)))
+        (if parser
+          (if-let [out (process-parser parser res)]
+            out
+            (recur))
+          res)))))
 
 (defn ^:private start-questioning [questions]
   (let [out (atom {})]
@@ -98,5 +120,5 @@
 
 (defn process [questions]
   (if (s/valid? ::questions questions)
-    (start-questioning (s/conform ::questions questions))
+    (start-questioning questions)
     (error-out questions)))
